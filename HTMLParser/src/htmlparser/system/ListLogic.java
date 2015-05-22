@@ -7,9 +7,15 @@
 package htmlparser.system;
 
 import htmlparser.components.DetailComponent;
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,15 +36,29 @@ public class ListLogic {
     ArrayList <DetailComponent> dl = new ArrayList();
     DetailComponent  detail;
     private final String baseDir= "http://shop.atlasparts.com.ua/search/?p=";
-    
-    public void createDetailList() throws InterruptedException{
-        int pageNumber = 1;
-        int r = 0;
+    private int pageNumber = 1;
+    private int pageLimit = 10;
+    public void createDetailList(String proxyIp) throws InterruptedException{
+        int localpagelimit = this.pageLimit;
         do{ 
+            localpagelimit--;
             try {
-                
+                URL website = new URL(baseDir+pageNumber); 
+                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyIp, 80)); 
+                HttpURLConnection httpUrlConnetion = (HttpURLConnection) website.openConnection(proxy);
+                httpUrlConnetion.connect();
+
+                // -- Download the website into a buffer
+                BufferedReader br = new BufferedReader(new InputStreamReader(httpUrlConnetion.getInputStream()));
+                StringBuilder buffer = new StringBuilder();
+                String str;
+
+                while( (str = br.readLine()) != null )
+                {
+                    buffer.append(str);
+                }
                 System.out.println("Page : "+pageNumber);
-                Document doc = Jsoup.connect(baseDir+pageNumber).get();
+                Document doc = Jsoup.parse(buffer.toString());
                 Element detail  = doc.select("table.list").first();
                 
                 if(detail.hasText()){
@@ -52,7 +72,6 @@ public class ListLogic {
                 }
                 
                 for(Element detailtd : details){
-                    r++;
                     Elements tds = detailtd.select("td");
                         Element td = tds.get(0);
                         Element td1 = tds.get(1);
@@ -81,7 +100,7 @@ public class ListLogic {
              } catch (IOException ex) {
                 Logger.getLogger(ListLogic.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }while(true);
+        }while(localpagelimit>0);
         
      }
     
