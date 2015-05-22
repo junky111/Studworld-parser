@@ -37,9 +37,6 @@ public class ListLogic {
         do{ 
             try {
                 
-                if((pageNumber%12)==0){
-                    Thread.sleep(300000);
-                }
                 System.out.println("Page : "+pageNumber);
                 Document doc = Jsoup.connect(baseDir+pageNumber).get();
                 Element detail  = doc.select("table.list").first();
